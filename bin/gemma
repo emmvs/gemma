@@ -1,4 +1,5 @@
-# bin/gemma
+#!/usr/bin/env ruby
+
 require_relative "../lib/gemma"
 require 'yaml'
 

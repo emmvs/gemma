@@ -19,6 +19,9 @@ module Gemma
     def self.update_keys(source, target, parent_key = nil)
       source.each do |key, value|
         full_key = [parent_key, key].compact.join('.')
+
+        next if key == LocaleUpdater::Updater::BASE_LOCALE
+
         if value.is_a?(Hash)
           target[key] ||= {}
           update_keys(value, target[key], full_key)
