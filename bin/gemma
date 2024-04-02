@@ -1,0 +1,51 @@
+# bin/gemma
+require_relative "../lib/gemma"
+require 'yaml'
+
+module LocaleUpdater
+  class Updater
+    LOCALES_DIR = File.join(Dir.pwd, 'config', 'locales')
+    BASE_LOCALE = 'en'.freeze
+    PREFIXES = ['', 'devise', 'simple_form'].freeze
+
+    def self.run
+      new.update_all_locales
+    end
+
+    def update_all_locales
+      PREFIXES.each { |prefix| update_locale_set(prefix) }
+    end
+
+    private
+
+    def update_locale_set(prefix)
+      base_file_path = base_file(prefix)
+      return unless base_file_path
+
+      target_files(prefix).each do |file_path|
+        next if File.basename(file_path).start_with?(BASE_LOCALE)
+        update_file(base_file_path, file_path)
+      end
+    end
+
+    def base_file(prefix)
+      pattern = prefix.empty? ? "#{BASE_LOCALE}.yml" : "#{prefix}.#{BASE_LOCALE}.yml"
+      Dir.glob(File.join(LOCALES_DIR, pattern)).first
+    end
+
+    def target_files(prefix)
+      pattern = prefix.empty? ? "*.yml" : "#{prefix}.*.yml"
+      Dir.glob(File.join(LOCALES_DIR, pattern))
+    end
+
+    def update_file(base_file_path, target_file_path)
+      base_content = YAML.load_file(base_file_path)
+      target_content = YAML.load_file(target_file_path)
+      updated_content = Gemma::Synchronizer.update_keys(base_content, target_content)
+      File.write(target_file_path, updated_content.to_yaml(line_width: -1))
+      puts "#{File.basename(target_file_path)} has been updated."
+    end
+  end
+end
+
+LocaleUpdater::Updater.run
